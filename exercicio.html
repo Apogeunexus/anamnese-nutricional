@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercício Físico — Auton Health</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f6;
+    --white: #ffffff;
+    --green: #10b981;
+    --green-dk: #059669;
+    --green-lt: #ecfdf5;
+    --border: #e5e7eb;
+    --text: #111827;
+    --sub: #6b7280;
+    --muted: #9ca3af;
+    --sep: #f3f4f6;
+    --r: 16px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+  .page {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── VIEWS ── */
+  .view {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    padding: 28px 20px 40px;
+    transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
+    will-change: transform, opacity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .view.active { transform: translateX(0); opacity: 1; z-index: 2; }
+  .view.left   { transform: translateX(-100%); opacity: 0; z-index: 1; pointer-events: none; }
+  .view.right  { transform: translateX(100%); opacity: 0; z-index: 1; pointer-events: none; }
+
+  /* ── HEADER BRAND ── */
+  .header-brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(16,185,129,.3);
+  }
+  .brand-name { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; }
+  .brand-name span { color: var(--green); }
+
+  /* ── LIST VIEW ── */
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 24px;
+  }
+
+  /* Observation Card */
+  .obs-card {
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .obs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-lt);
+    color: var(--green-dk);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 50px;
+    margin-bottom: 12px;
+  }
+  .obs-badge svg { flex-shrink: 0; }
+  .obs-text {
+    font-size: 13.5px;
+    color: #374151;
+    line-height: 1.65;
+  }
+
+  /* Treino List */
+  .treino-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .treino-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+  .treino-item:hover, .treino-item:active {
+    border-color: #a7f3d0;
+    background: rgba(236,253,245,0.3);
+  }
+  .treino-badge {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: var(--sep);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .treino-info { flex: 1; min-width: 0; }
+  .treino-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .treino-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .treino-chevron {
+    color: #d1d5db;
+    flex-shrink: 0;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--sub);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  /* ── DETAIL VIEW ── */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .back-btn {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: var(--green); background: var(--green-lt); }
+  .back-btn svg { color: var(--sub); }
+  .detail-pretitle {
+    font-size: 12px;
+    color: var(--green-dk);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .detail-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  /* Pills */
+  .pills {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-lt);
+    color: var(--green-dk);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 50px;
+  }
+
+  /* Exercise Card */
+  .exercicio-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+  .exercicio-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .exercicio-num {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .exercicio-nome {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .check-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--green-lt);
+    border: 1.5px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .stat-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px;
+    border-right: 1px solid #f0f0f0;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .help-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--sep);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .help-btn:hover, .help-btn:active {
+    background: var(--green-lt);
+    border-color: var(--green);
+    color: var(--green-dk);
+  }
+  .help-btn.disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* Observacoes */
+  .exercicio-obs {
+    border-top: 1px solid var(--sep);
+    padding-top: 12px;
+  }
+  .exercicio-obs-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .exercicio-obs-text {
+    font-size: 13px;
+    color: var(--sub);
+    line-height: 1.55;
+  }
+
+  /* ── VIDEO MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: #111827;
+    border-radius: 18px;
+    overflow: hidden;
+    width: 320px;
+    max-width: 90vw;
+    transform: scale(0.92);
+    transition: transform .25s;
+  }
+  .modal-overlay.open .modal-box { transform: scale(1); }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .modal-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+    flex: 1;
+  }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.2); }
+  .modal-player {
+    position: relative;
+    width: 100%;
+    padding-top: 177.77%;
+  }
+  .modal-player iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  .modal-footer {
+    padding: 12px 16px;
+  }
+  .modal-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .modal-footer a:hover { color: #ffffff; }
+
+  /* scrollbar */
+  .view::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- ═══ LIST VIEW ═══ -->
+  <div id="listView" class="view active">
+    <div class="header-brand">
+      <div class="brand-mark">🏋️</div>
+      <div class="brand-name">Auton<span>Health</span></div>
+    </div>
+
+    <h1 class="page-title">Exercício Físico</h1>
+    <p class="page-subtitle" id="subtitleText"></p>
+
+    <div id="obsCard"></div>
+    <div id="treinoList" class="treino-list"></div>
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="empty-icon">🏋️</div>
+      Nenhum plano de exercícios cadastrado<br>pelo seu profissional ainda.
+    </div>
+  </div>
+
+  <!-- ═══ DETAIL VIEW ═══ -->
+  <div id="detailView" class="view right">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showList()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div>
+        <div class="detail-pretitle" id="detailPretitle"></div>
+        <div class="detail-title" id="detailTitle"></div>
+      </div>
+    </div>
+    <div class="pills" id="detailPills"></div>
+    <div id="exerciciosList"></div>
+  </div>
+</div>
+
+<!-- ═══ VIDEO MODAL ═══ -->
+<div class="modal-overlay" id="videoModal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle"></span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-player">
+      <iframe id="modalIframe" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <div class="modal-footer">
+      <a id="modalYtLink" href="#" target="_blank" rel="noopener noreferrer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.5 6.2c-.3-1-1-1.8-2-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.5.6c-1 .3-1.7 1.1-2 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8c.3 1 1 1.8 2 2.1 1.9.6 9.5.6 9.5.6s7.6 0 9.5-.6c1-.3 1.7-1.1 2-2.1.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+        Ver no YouTube
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MOCK DATA ──
+const mockPlano = {
+  observacao_geral: "Protocolo de hipertrofia intermediário com foco em volume progressivo. Priorize a execução técnica. Realize aquecimento de 5 a 10 minutos antes de cada sessão.",
+  treinos: [
+    {
+      id: '1', letra: 'A', nome: 'Peito e Tríceps', dia_semana: 'Segunda-feira', ordem: 0,
+      exercicios: [
+        { id: '1', nome: 'Supino Reto com Halter', series: 4, repeticoes: '8–12', descanso: '90s', observacoes: 'Manter escápulas estabilizadas, amplitude total, controle na descida.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 0 },
+        { id: '2', nome: 'Crucifixo Inclinado', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Cotovelos levemente flexionados durante todo o movimento.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 1 },
+        { id: '3', nome: 'Supino Inclinado Máquina', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Foco na contração do peitoral superior.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 2 },
+        { id: '4', nome: 'Tríceps Testa com Barra W', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Manter cotovelos apontados para cima.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 3 },
+        { id: '5', nome: 'Tríceps Corda no Pulley', series: 3, repeticoes: '12–15', descanso: '45s', observacoes: 'Extensão completa e abertura no final do movimento.', video_url: null, ordem: 4 },
+      ]
+    },
+    {
+      id: '2', letra: 'B', nome: 'Costas e Bíceps', dia_semana: 'Terça-feira', ordem: 1,
+      exercicios: [
+        { id: '6', nome: 'Puxada Frente Barra Anatômica Aberta', series: 4, repeticoes: '8–12', descanso: '90s', observacoes: 'Tracionar até linha do queixo, manter cotovelos abertos.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 0 },
+        { id: '7', nome: 'Remada Curvada com Halter', series: 4, repeticoes: '8–10', descanso: '90s', observacoes: 'Tronco a 45°, puxar até o quadril.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 1 },
+        { id: '8', nome: 'Remada Baixa Triângulo', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Não usar impulso do tronco.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 2 },
+        { id: '9', nome: 'Rosca Direta com Barra', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Sem balançar o corpo, fase excêntrica controlada.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 3 },
+      ]
+    },
+    {
+      id: '3', letra: 'C', nome: 'Pernas — Quadríceps', dia_semana: 'Quarta-feira', ordem: 2,
+      exercicios: [
+        { id: '10', nome: 'Agachamento Livre', series: 4, repeticoes: '6–10', descanso: '120s', observacoes: 'Descer até 90° ou mais, joelhos alinhados com os pés.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 0 },
+        { id: '11', nome: 'Leg Press 45°', series: 4, repeticoes: '10–12', descanso: '90s', observacoes: 'Não travar os joelhos na extensão.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 1 },
+        { id: '12', nome: 'Cadeira Extensora', series: 3, repeticoes: '12–15', descanso: '60s', observacoes: 'Extensão completa, 2s de pico na contração.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 2 },
+      ]
+    },
+    {
+      id: '4', letra: 'D', nome: 'Ombros e Trapézio', dia_semana: 'Quinta-feira', ordem: 3,
+      exercicios: [
+        { id: '13', nome: 'Desenvolvimento com Halter', series: 4, repeticoes: '8–12', descanso: '90s', observacoes: 'Cotovelos a 90° na descida, sem impulso.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 0 },
+        { id: '14', nome: 'Elevação Lateral', series: 4, repeticoes: '12–15', descanso: '45s', observacoes: 'Elevar até a linha dos ombros, polegar levemente para cima.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 1 },
+        { id: '15', nome: 'Encolhimento com Halter', series: 3, repeticoes: '12–15', descanso: '45s', observacoes: 'Segurar 2s no topo da contração.', video_url: null, ordem: 2 },
+      ]
+    },
+    {
+      id: '5', letra: 'E', nome: 'Pernas — Posterior e Glúteo', dia_semana: 'Sexta-feira', ordem: 4,
+      exercicios: [
+        { id: '16', nome: 'Stiff com Barra', series: 4, repeticoes: '8–12', descanso: '90s', observacoes: 'Manter lombar neutra, quadril empurra para trás.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 0 },
+        { id: '17', nome: 'Cadeira Flexora', series: 3, repeticoes: '10–12', descanso: '60s', observacoes: 'Fase excêntrica lenta, sem usar impulso.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 1 },
+        { id: '18', nome: 'Hip Thrust na Barra', series: 4, repeticoes: '10–12', descanso: '90s', observacoes: 'Extensão completa do quadril, contrair glúteos no topo.', video_url: 'https://www.youtube.com/shorts/QSfJldUmjqk', ordem: 2 },
+      ]
+    }
+  ]
+};
+
+// ── RENDER ──
+const plano = mockPlano;
+
+function init() {
+  if (!plano || !plano.treinos || plano.treinos.length === 0) {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('subtitleText').textContent = '0 treinos cadastrados';
+    return;
+  }
+
+  const treinos = plano.treinos.sort((a, b) => a.ordem - b.ordem);
+  document.getElementById('subtitleText').textContent = treinos.length + ' treinos cadastrados no seu plano';
+
+  // Observation card
+  if (plano.observacao_geral) {
+    document.getElementById('obsCard').innerHTML = `
+      <div class="obs-card">
+        <span class="obs-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Observação Geral
+        </span>
+        <p class="obs-text">${plano.observacao_geral}</p>
+      </div>
+    `;
+  }
+
+  // Treino list
+  const listHtml = treinos.map(t => {
+    const exCount = t.exercicios ? t.exercicios.length : 0;
+    return `
+      <div class="treino-item" onclick="showDetail('${t.id}')">
+        <div class="treino-badge">${t.letra}</div>
+        <div class="treino-info">
+          <div class="treino-name">Treino ${t.letra} — ${t.nome}</div>
+          <div class="treino-meta">${t.dia_semana} · ${exCount} exercícios</div>
+        </div>
+        <svg class="treino-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('treinoList').innerHTML = listHtml;
+}
+
+function showDetail(treinoId) {
+  const treino = plano.treinos.find(t => t.id === treinoId);
+  if (!treino) return;
+
+  const exercicios = treino.exercicios.sort((a, b) => a.ordem - b.ordem);
+  const totalSeries = exercicios.reduce((sum, e) => sum + (e.series || 0), 0);
+
+  document.getElementById('detailPretitle').textContent = `Treino ${treino.letra} · ${treino.dia_semana}`;
+  document.getElementById('detailTitle').textContent = treino.nome;
+
+  document.getElementById('detailPills').innerHTML = `
+    <span class="pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+      ${exercicios.length} exercícios
+    </span>
+    <span class="pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>
+      ${totalSeries} séries
+    </span>
+  `;
+
+  const exHtml = exercicios.map((ex, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const hasVideo = !!ex.video_url;
+    return `
+      <div class="exercicio-card">
+        <div class="exercicio-top">
+          <div>
+            <div class="exercicio-num">Exercício ${num}</div>
+            <div class="exercicio-nome">${ex.nome}</div>
+          </div>
+          <div class="check-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-cell">
+            <span class="stat-label">Séries:</span>
+            <span class="stat-value">${ex.series}</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">Repetições:</span>
+            <span class="stat-value">${ex.repeticoes}</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">Descanso:</span>
+            <span class="stat-value">${ex.descanso}</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-label">Ajuda</span>
+            <button class="help-btn ${hasVideo ? '' : 'disabled'}" ${hasVideo ? `onclick="openModal('${ex.id}')"` : ''}>?</button>
+          </div>
+        </div>
+        ${ex.observacoes ? `
+        <div class="exercicio-obs">
+          <div class="exercicio-obs-label">Observações:</div>
+          <div class="exercicio-obs-text">${ex.observacoes}</div>
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+  document.getElementById('exerciciosList').innerHTML = exHtml;
+
+  // Store for modal
+  window._currentExercicios = exercicios;
+
+  // Animate
+  document.getElementById('listView').className = 'view left';
+  document.getElementById('detailView').className = 'view active';
+  document.getElementById('detailView').scrollTop = 0;
+}
+
+function showList() {
+  document.getElementById('detailView').className = 'view right';
+  document.getElementById('listView').className = 'view active';
+}
+
+// ── MODAL ──
+function getEmbedUrl(url) {
+  const shortsMatch = url.match(/shorts\/([a-zA-Z0-9_-]+)/);
+  if (shortsMatch) return 'https://www.youtube.com/embed/' + shortsMatch[1] + '?autoplay=1';
+  const watchMatch = url.match(/v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) return 'https://www.youtube.com/embed/' + watchMatch[1] + '?autoplay=1';
+  return url;
+}
+
+function openModal(exercicioId) {
+  const ex = window._currentExercicios.find(e => e.id === exercicioId);
+  if (!ex || !ex.video_url) return;
+
+  document.getElementById('modalTitle').textContent = ex.nome;
+  document.getElementById('modalIframe').src = getEmbedUrl(ex.video_url);
+  document.getElementById('modalYtLink').href = ex.video_url;
+  document.getElementById('videoModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalIframe').src = '';
+  document.getElementById('videoModal').classList.remove('open');
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Init
+init();
+</script>
+</body>
+</html>
