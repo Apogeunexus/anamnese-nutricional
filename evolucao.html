@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evolução Mensal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #f4f6f4;
+    --white:    #ffffff;
+    --green:    #2db85a;
+    --green-dk: #1d8f42;
+    --green-lt: #e8f7ee;
+    --green-md: #c2ecd1;
+    --border:   #e2e8e2;
+    --text:     #1a2420;
+    --sub:      #7a8c80;
+    --muted:    #b4bfb4;
+    --r:        16px;
+    --shadow:   0 2px 12px rgba(0,0,0,0.06);
+    --shadow-h: 0 8px 28px rgba(0,0,0,0.11);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 28px 80px;
+  }
+  .page { max-width: 1080px; margin: 0 auto; }
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--green), var(--green-dk));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+    box-shadow: 0 4px 14px rgba(45,184,90,.3);
+  }
+  .brand-name { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; }
+  .brand-name span { color: var(--green); }
+  .patient-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 50px; padding: 7px 18px 7px 8px;
+    box-shadow: var(--shadow);
+  }
+  .pat-ava {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--green-md), var(--green));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .pat-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+  .pat-sub  { font-size:11px; color:var(--sub); }
+  /* ── TIMELINE LINE ── */
+  .timeline {
+    position: relative;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 22px; top: 24px; bottom: 24px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--green-md), var(--green));
+    border-radius: 2px;
+    z-index: 0;
+  }
+  /* ── ACCORDION ITEM ── */
+  .ac-item {
+    position: relative; z-index: 1;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: box-shadow .25s, border-color .25s;
+  }
+  .ac-item.open {
+    border-color: var(--green-md);
+    box-shadow: var(--shadow-h);
+  }
+  .ac-item.goal { border-color: var(--green); }
+  /* ── ACCORDION HEADER ── */
+  .ac-head {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .2s;
+  }
+  .ac-head:hover { background: var(--bg); }
+  .ac-item.open .ac-head { background: var(--green-lt); }
+  .ac-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .ac-item.open .ac-num {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .ac-item.goal .ac-num {
+    background: var(--green-dk);
+    border-color: var(--green-dk);
+  }
+  .ac-num-n {
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+    color: var(--sub); line-height: 1;
+  }
+  .ac-item.open .ac-num-n,
+  .ac-item.goal .ac-num-n { color: #fff; }
+  .ac-num-label {
+    font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .ac-item.open .ac-num-label,
+  .ac-item.goal .ac-num-label { color: rgba(255,255,255,.7); }
+  .ac-info { flex: 1; }
+  .ac-info-top { display: flex; align-items: center; gap: 10px; }
+  .ac-month { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; }
+  .ac-date  { font-size:11px; color:var(--sub); }
+  .ac-goal-badge {
+    background: var(--green);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 9px; border-radius: 20px;
+    letter-spacing: .03em;
+  }
+  .ac-pills { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .pill {
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px; border-radius: 20px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--sub);
+  }
+  .pill-green { background: var(--green-lt); border-color: var(--green-md); color: var(--green-dk); font-weight: 700; }
+  .pill-warn  { background: #fef9ec; border-color: #f3d97a; color: #9a7010; }
+  .ac-chevron {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .3s;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .ac-item.open .ac-chevron {
+    background: var(--white);
+    border-color: var(--green-md);
+    color: var(--green-dk);
+    transform: rotate(180deg);
+  }
+  /* ── ACCORDION BODY ── */
+  .ac-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height .45s cubic-bezier(.4,0,.2,1);
+  }
+  .ac-item.open .ac-body { max-height: 1200px; }
+  .ac-body-inner {
+    padding: 0 18px 20px;
+    border-top: 1px solid var(--border);
+  }
+  /* charts row */
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin: 18px 0;
+  }
+  .chart-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+  }
+  .chart-card-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+  .chart-card-sub   { font-size:11px; color:var(--sub); margin-top:2px; margin-bottom:12px; }
+  .chart-wrap { position:relative; height:90px; }
+  .chart-wrap canvas { display:block; width:100% !important; }
+  /* bottom: photos + card */
+  .bottom-row {
+    display: flex; gap: 14px; align-items: stretch;
+  }
+  .photos-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    min-height: 420px;
+  }
+  .photo-slot {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden; position: relative;
+    cursor: pointer;
+    transition: border-color .2s, transform .2s, box-shadow .2s;
+  }
+  .photo-slot:hover { border-color: var(--green); transform: translateY(-2px); box-shadow: var(--shadow-h); }
+  .slot-empty {
+    width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  }
+  .slot-icon {
+    width:38px; height:38px;
+    background: var(--white);
+    border: 1.5px dashed var(--green-md);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; transition: all .2s;
+  }
+  .photo-slot:hover .slot-icon { background:var(--green-lt); border-color:var(--green); }
+  .slot-lbl { font-size:10px; color:var(--sub); text-align:center; line-height:1.4; font-weight:500; }
+  .slot-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .slot-footer {
+    position:absolute; bottom:0; left:0; right:0;
+    padding:8px 10px;
+    background:linear-gradient(to top, rgba(10,25,15,.9) 0%, transparent 100%);
+    display:none;
+  }
+  .slot-pos  { font-family:'Syne',sans-serif; font-size:9px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:.06em; }
+  .slot-date { font-size:9px; color:rgba(255,255,255,.6); margin-top:1px; }
+  .slot-edit-btn {
+    position:absolute; top:6px; right:6px;
+    width:24px; height:24px;
+    background:rgba(255,255,255,.9);
+    border:1px solid var(--border);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; opacity:0; transition:opacity .2s; color:var(--text);
+  }
+  .photo-slot:hover .slot-edit-btn { opacity:1; }
+  /* info card */
+  .info-card {
+    width: 220px; flex-shrink: 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    display: flex; flex-direction: column; gap: 0;
+    overflow-y: auto;
+  }
+  .info-tag {
+    display:inline-flex; align-items:center;
+    background:var(--green-lt); border:1px solid var(--green-md);
+    border-radius:8px; padding:3px 9px;
+    font-family:'Syne',sans-serif; font-size:10px; font-weight:700;
+    color:var(--green-dk); letter-spacing:.06em; text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .info-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 0; border-bottom:1px solid var(--border);
+  }
+  .info-row:last-of-type { border-bottom:none; }
+  .info-key { font-size:11px; color:var(--sub); display:flex; align-items:center; gap:5px; }
+  .info-val { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; display:flex; align-items:center; gap:4px; }
+  .delta { font-size:10px; font-weight:600; font-family:'DM Sans',sans-serif; padding:2px 6px; border-radius:20px; }
+  .d-pos { background:var(--green-lt); color:var(--green-dk); }
+  .d-neu { background:#f0f0f0; color:var(--sub); }
+  .info-div { height:1px; background:var(--border); margin:10px 0; }
+  .imc-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .imc-item { text-align:center; }
+  .imc-lbl  { font-size:9px; color:var(--sub); margin-bottom:1px; }
+  .imc-val  { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:var(--text); }
+  .imc-val-g { color:var(--green-dk); }
+  .imc-cls  { font-size:9px; color:var(--sub); margin-top:1px; font-weight:500; }
+  .imc-arrow { font-size:14px; color:var(--muted); }
+  .imc-track {
+    position:relative; height:7px; border-radius:7px;
+    background:linear-gradient(90deg,#60d9a0 0%,#f6c94e 45%,#f87171 75%);
+    overflow:visible;
+  }
+  .imc-marker {
+    position:absolute; top:50%; transform:translate(-50%,-50%);
+    width:13px; height:13px;
+    background:#fff; border:2.5px solid var(--green-dk); border-radius:50%;
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
+    transition: left .6s ease;
+  }
+  .imc-scale { display:flex; justify-content:space-between; margin-top:3px; font-size:9px; color:var(--muted); }
+  .comp-row { display:flex; gap:8px; justify-content:center; margin-bottom:4px; }
+  .comp-item { text-align:center; flex:1; }
+  .comp-ring-wrap { position:relative; width:52px; height:52px; margin:0 auto 4px; }
+  .comp-center { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .comp-val { font-family:'Syne',sans-serif; font-size:11px; font-weight:800; color:var(--text); }
+  .comp-name { font-size:9px; color:var(--sub); margin-bottom:2px; }
+  .comp-delta { font-size:9px; }
+  .comp-lbl { font-size:9px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .prog-lbl { font-size:9px; color:var(--sub); margin-bottom:5px; }
+  .prog-track { height:5px; background:var(--border); border-radius:5px; overflow:hidden; }
+  .prog-fill { height:100%; background:linear-gradient(90deg,var(--green-dk),var(--green)); border-radius:5px; width:0%; transition:width 1s ease; }
+  .prog-nums { display:flex; justify-content:space-between; margin-top:4px; font-size:9px; color:var(--sub); }
+  .prog-pct  { color:var(--green-dk); font-weight:700; font-family:'Syne',sans-serif; }
+  .total-badge {
+    margin-top:10px;
+    background:var(--green-lt); border:1px solid var(--green-md);
+    border-radius:10px; padding:10px 12px; text-align:center;
+  }
+  .total-val { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--green-dk); }
+  .total-lbl { font-size:10px; color:var(--sub); margin-top:1px; }
+  .nota-block { margin-top:10px; }
+  .nota-lbl { font-size:9px; color:var(--sub); font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+  .nota-txt  { font-size:10px; color:var(--text); line-height:1.5; font-style:italic; }
+  /* ── MODAL ── */
+  .overlay {
+    position:fixed; inset:0;
+    background:rgba(20,36,28,.55); backdrop-filter:blur(8px);
+    z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .22s;
+  }
+  .overlay.on { opacity:1; pointer-events:all; }
+  .modal {
+    background:var(--white); border:1px solid var(--border);
+    border-radius:22px; padding:26px;
+    width:90%; max-width:340px;
+    box-shadow:0 20px 60px rgba(0,0,0,.15);
+    transform:scale(.93); transition:transform .22s;
+  }
+  .overlay.on .modal { transform:scale(1); }
+  .modal h3 { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; margin-bottom:4px; }
+  .modal p  { font-size:12px; color:var(--sub); margin-bottom:16px; }
+  .drop-zone {
+    border:2px dashed var(--green-md); border-radius:14px; padding:26px;
+    text-align:center; cursor:pointer; transition:all .2s; margin-bottom:12px;
+    background:var(--bg);
+  }
+  .drop-zone:hover { border-color:var(--green); background:var(--green-lt); }
+  .drop-icon { font-size:24px; margin-bottom:6px; }
+  .drop-txt { font-size:12px; color:var(--sub); }
+  .drop-txt strong { color:var(--green-dk); }
+  #file-inp { display:none; }
+  #preview-box { display:none; margin-bottom:12px; }
+  #preview-box img { width:100%; border-radius:10px; border:1px solid var(--border); }
+  .modal-btns { display:flex; gap:8px; }
+  .btn-cancel {
+    flex:1; padding:10px;
+    background:transparent; border:1.5px solid var(--border);
+    border-radius:10px; color:var(--sub);
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .2s;
+  }
+  .btn-cancel:hover { border-color:var(--green); color:var(--text); }
+  .btn-ok {
+    flex:2; padding:10px;
+    background:linear-gradient(135deg,var(--green),var(--green-dk));
+    border:none; border-radius:10px; color:#fff;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:13px;
+    cursor:pointer; box-shadow:0 4px 14px rgba(45,184,90,.28);
+    transition:opacity .2s;
+  }
+  .btn-ok:hover { opacity:.9; }
+  @media(max-width:780px) {
+    .charts-row { grid-template-columns:1fr; }
+    .bottom-row { flex-direction:column; }
+    .info-card { width:100%; }
+    .photos-grid { min-height:320px; }
+  }
+  @media(max-width:520px) {
+    body { padding:16px 12px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">🥗</div>
+    </div>
+    <div class="patient-chip">
+      <div class="pat-ava">👩</div>
+      <div>
+        <div class="pat-name">Thiago Nascimento</div>
+        <div class="pat-sub">6 meses · meta atingida 🎯</div>
+      </div>
+    </div>
+  </header>
+  <!-- CHARTS FIXOS -->
+  <div class="charts-row" style="margin-bottom:28px">
+    <div class="chart-card" style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 20px 16px;box-shadow:var(--shadow)">
+      <div class="chart-card-title">Peso corporal</div>
+      <div class="chart-card-sub">kg · evolução mês a mês</div>
+      <div class="chart-wrap"><canvas id="cp-global"></canvas></div>
+    </div>
+    <div class="chart-card" style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 20px 16px;box-shadow:var(--shadow)">
+      <div class="chart-card-title">Circunferência da cintura</div>
+      <div class="chart-card-sub">cm · evolução mês a mês</div>
+      <div class="chart-wrap"><canvas id="cc-global"></canvas></div>
+    </div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</div>
+<!-- MODAL -->
+<div class="overlay" id="ov">
+  <div class="modal">
+    <h3 id="m-title">📸 Foto</h3>
+    <p id="m-sub">Selecione a imagem.</p>
+    <div class="drop-zone" onclick="document.getElementById('file-inp').click()">
+      <div class="drop-icon">📁</div>
+      <div class="drop-txt"><strong>Clique para selecionar</strong><br><span style="font-size:10px">JPG, PNG · até 10 MB</span></div>
+    </div>
+    <input type="file" id="file-inp" accept="image/*" onchange="handleFile(event)">
+    <div id="preview-box"><img id="prev-img"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-ok" onclick="confirmPhoto()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const PHOTO_LABELS = ['Frente fechada','Costas fechadas','Lateral esq. braços cruzados','Lateral dir. braços cruzados'];
+const CIRCUMF = 138.2;
+const ALL_PESO    = [75.0, 73.2, 71.0, 68.5, 65.0];
+const ALL_CINTURA = [80,   78,   76,   73,   69  ];
+const ALL_MONTHS  = ['Jan','Fev','Mar','Abr','Jun'];
+const ANAMNESES = [
+  {
+    id:0, num:1, mes:'Janeiro', mesAbr:'Jan', ano:'2025', data:'10 Jan 2025',
+    peso:75.0, cintura:80, imc:29.3, gordura:37, massaMagra:41.3,
+    deltaPeso:null, deltaCintura:null, deltaGordura:null, deltaMagra:null,
+    imcClass:'Obesidade I', imcColor:'#f87171',
+    progresso:0, totalPerdido:0, isGoal:false,
+    nota:'Início do acompanhamento. Hábitos alimentares irregulares, alto consumo de ultraprocessados. Paciente motivada e comprometida.'
+  },
+  {
+    id:1, num:2, mes:'Fevereiro', mesAbr:'Fev', ano:'2025', data:'12 Fev 2025',
+    peso:73.2, cintura:78, imc:28.6, gordura:35, massaMagra:41.5,
+    deltaPeso:'↓ −1,8 kg', deltaCintura:'↓ −2 cm', deltaGordura:'↓ −2pp', deltaMagra:'↑ +0,2 kg',
+    imcClass:'Sobrepeso', imcColor:'#f6a940',
+    progresso:18, totalPerdido:1.8, isGoal:false,
+    nota:'Ótima adaptação. Reduziu açúcar e farinhas refinadas. Sono melhorou. Manteve 3x treino por semana.'
+  },
+  {
+    id:2, num:3, mes:'Março', mesAbr:'Mar', ano:'2025', data:'10 Mar 2025',
+    peso:71.0, cintura:76, imc:27.7, gordura:33, massaMagra:41.8,
+    deltaPeso:'↓ −2,2 kg', deltaCintura:'↓ −2 cm', deltaGordura:'↓ −2pp', deltaMagra:'↑ +0,3 kg',
+    imcClass:'Sobrepeso', imcColor:'#f6a940',
+    progresso:40, totalPerdido:4.0, isGoal:false,
+    nota:'Excelente progresso! Aumentamos proteína no jantar. Paciente relatou mais energia e menos inchaço abdominal.'
+  },
+  {
+    id:3, num:4, mes:'Abril', mesAbr:'Abr', ano:'2025', data:'08 Abr 2025',
+    peso:68.5, cintura:73, imc:26.8, gordura:30, massaMagra:42.1,
+    deltaPeso:'↓ −2,5 kg', deltaCintura:'↓ −3 cm', deltaGordura:'↓ −3pp', deltaMagra:'↑ +0,3 kg',
+    imcClass:'Sobrepeso', imcColor:'#f6a940',
+    progresso:65, totalPerdido:6.5, isGoal:false,
+    nota:'Marco importante: −6,5 kg! IMC próximo de normal. Introduzimos carboidratos ciclados no dia de treino.'
+  },
+  {
+    id:4, num:5, mes:'Junho', mesAbr:'Jun', ano:'2025', data:'09 Jun 2025',
+    peso:65.0, cintura:69, imc:25.4, gordura:26, massaMagra:42.6,
+    deltaPeso:'↓ −3,5 kg', deltaCintura:'↓ −4 cm', deltaGordura:'↓ −4pp', deltaMagra:'↑ +0,5 kg',
+    imcClass:'✓ Normal', imcColor:'#2db85a',
+    progresso:100, totalPerdido:10.0, isGoal:true,
+    nota:'🎉 META ATINGIDA! Peso: 65 kg. Plano de manutenção iniciado. Paciente firme e confiante. Resultado extraordinário!'
+  }
+];
+const chartInstances = {};
+function buildAll() {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  ANAMNESES.forEach(a => {
+    tl.appendChild(buildItem(a));
+  });
+}
+function buildItem(a) {
+  const item = document.createElement('div');
+  item.className = 'ac-item' + (a.isGoal ? ' goal' : '');
+  item.id = 'ac-' + a.id;
+  const pillsHtml = a.deltaPeso
+    ? `<span class="pill pill-green">${a.deltaPeso}</span>
+       <span class="pill pill-green">${a.deltaCintura}</span>
+       <span class="pill pill-warn">IMC ${a.imc.toFixed(1)} · ${a.imcClass}</span>`
+    : `<span class="pill">Peso inicial: ${a.peso} kg</span>
+       <span class="pill">IMC ${a.imc.toFixed(1)} · ${a.imcClass}</span>`;
+  const goalBadge = a.isGoal ? '<span class="ac-goal-badge">🎯 Meta atingida!</span>' : '';
+  item.innerHTML = `
+    <div class="ac-head" onclick="toggle(${a.id})">
+      <div class="ac-num">
+        <div class="ac-num-n">${a.num}</div>
+        <div class="ac-num-label">Ana.</div>
+      </div>
+      <div class="ac-info">
+        <div class="ac-info-top">
+          <span class="ac-month">${a.mes} ${a.ano}</span>
+          <span class="ac-date">${a.data}</span>
+          ${goalBadge}
+        </div>
+        <div class="ac-pills">${pillsHtml}</div>
+      </div>
+      <div class="ac-chevron">▾</div>
+    </div>
+    <div class="ac-body" id="body-${a.id}">
+      <div class="ac-body-inner">
+        <div class="bottom-row">
+          <div class="photos-grid" id="pg-${a.id}">
+            ${buildPhotoSlots(a.id, a.mesAbr, a.ano)}
+          </div>
+          <div class="info-card">
+            <div class="info-tag">${a.mesAbr} ${a.ano}</div>
+            <div class="info-row">
+              <span class="info-key">⚖️ Peso</span>
+              <span class="info-val">${a.peso.toFixed(1)} kg ${a.deltaPeso ? `<span class="delta d-pos">${a.deltaPeso}</span>` : ''}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">📏 Cintura</span>
+              <span class="info-val">${a.cintura} cm ${a.deltaCintura ? `<span class="delta d-pos">${a.deltaCintura}</span>` : ''}</span>
+            </div>
+            <div class="info-div"></div>
+            <div class="imc-row">
+              <div class="imc-item">
+                <div class="imc-lbl">IMC atual</div>
+                <div class="imc-val">${a.imc.toFixed(1)}</div>
+                <div class="imc-cls" style="color:${a.imcColor}">${a.imcClass}</div>
+              </div>
+              <div class="imc-arrow">→</div>
+              <div class="imc-item">
+                <div class="imc-lbl">IMC meta</div>
+                <div class="imc-val imc-val-g">25,4</div>
+                <div class="imc-cls" style="color:var(--green-dk)">✓ Normal</div>
+              </div>
+            </div>
+            <div class="imc-track">
+              <div class="imc-marker" id="im-${a.id}" style="left:${imcPct(a.imc)}%"></div>
+            </div>
+            <div class="imc-scale"><span>18,5</span><span>25</span><span>30</span></div>
+            <div class="info-div"></div>
+            <div class="comp-lbl">Composição Corporal</div>
+            <div class="comp-row">
+              <div class="comp-item">
+                <div class="comp-ring-wrap">
+                  <svg viewBox="0 0 52 52" width="52" height="52">
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#eef3ef" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#2db85a" stroke-width="5"
+                      stroke-dasharray="125.7" stroke-dashoffset="${gordOffset(a.gordura)}"
+                      stroke-linecap="round" transform="rotate(-90 26 26)"
+                      id="rg-${a.id}" style="transition:stroke-dashoffset .8s ease"/>
+                  </svg>
+                  <div class="comp-center"><div class="comp-val">${a.gordura}%</div></div>
+                </div>
+                <div class="comp-name">% Gordura</div>
+                <div class="comp-delta">${a.deltaGordura ? `<span class="delta d-pos">${a.deltaGordura}</span>` : ''}</div>
+              </div>
+              <div class="comp-item">
+                <div class="comp-ring-wrap">
+                  <svg viewBox="0 0 52 52" width="52" height="52">
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#eef3ef" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#1d8f42" stroke-width="5"
+                      stroke-dasharray="125.7" stroke-dashoffset="${muscOffset(a.massaMagra)}"
+                      stroke-linecap="round" transform="rotate(-90 26 26)"
+                      id="rm-${a.id}" style="transition:stroke-dashoffset .8s ease"/>
+                  </svg>
+                  <div class="comp-center"><div class="comp-val" style="font-size:10px">${a.massaMagra.toFixed(1)}<span style="font-size:8px">kg</span></div></div>
+                </div>
+                <div class="comp-name">Massa magra</div>
+                <div class="comp-delta">${a.deltaMagra ? `<span class="delta d-pos">${a.deltaMagra}</span>` : ''}</div>
+              </div>
+            </div>
+            <div class="info-div"></div>
+            <div class="prog-lbl">Progresso rumo à meta (65 kg)</div>
+            <div class="prog-track"><div class="prog-fill" id="pf-${a.id}"></div></div>
+            <div class="prog-nums">
+              <span>75 kg</span>
+              <span class="prog-pct">${a.progresso}%</span>
+              <span>65 kg</span>
+            </div>
+            <div class="total-badge">
+              <div class="total-val">${a.totalPerdido > 0 ? '−' + a.totalPerdido.toFixed(1) + ' kg' : '75,0 kg'}</div>
+              <div class="total-lbl">${a.totalPerdido > 0 ? 'perdidos desde o início' : 'início do acompanhamento'}</div>
+            </div>
+            <div class="nota-block">
+              <div class="nota-lbl">Obs. do nutricionista</div>
+              <div class="nota-txt">${a.nota}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  return item;
+}
+function buildPhotoSlots(aid, mes, ano) {
+  return PHOTO_LABELS.map((lbl, i) => `
+    <div class="photo-slot" onclick="openModal(${aid},${i})">
+      <div class="slot-empty">
+        <div class="slot-icon">📷</div>
+        <div class="slot-lbl">${lbl.replace(' ·','<br>')}</div>
+      </div>
+      <div class="slot-footer" id="sf-${aid}-${i}">
+        <div class="slot-pos">${lbl}</div>
+        <div class="slot-date">${mes} ${ano}</div>
+      </div>
+      <div class="slot-edit-btn">✎</div>
+    </div>
+  `).join('');
+}
+function imcPct(imc) { return Math.min(Math.max((imc - 18.5) / (35 - 18.5) * 100, 2), 94); }
+function gordOffset(g) { return 125.7 * (1 - g / 60); }
+function muscOffset(m) { return Math.max(125.7 * (1 - (m - 38) / 10), 8); }
+function toggle(id) {
+  const item = document.getElementById('ac-' + id);
+  const wasOpen = item.classList.contains('open');
+  ANAMNESES.forEach(a => document.getElementById('ac-' + a.id).classList.remove('open'));
+  if (!wasOpen) {
+    item.classList.add('open');
+    highlightGlobal(id);
+    setTimeout(() => {
+      const pf = document.getElementById('pf-' + id);
+      if (pf) pf.style.width = ANAMNESES[id].progresso + '%';
+    }, 120);
+  } else {
+    highlightGlobal(null);
+  }
+}
+let globalPeso = null, globalCint = null;
+function initGlobalCharts() {
+  globalPeso = makeChart('cp-global', ALL_MONTHS, ALL_PESO,    65, '#2db85a');
+  globalCint = makeChart('cc-global', ALL_MONTHS, ALL_CINTURA, 68, '#1d8f42');
+}
+function highlightGlobal(activeId) {
+  [globalPeso, globalCint].forEach(chart => {
+    if (!chart) return;
+    const ds = chart.data.datasets[0];
+    const color = ds.borderColor;
+    ds.pointBackgroundColor = ds.data.map((_, i) => i === activeId ? color : '#fff');
+    ds.pointRadius          = ds.data.map((_, i) => i === activeId ? 9 : 4);
+    chart.update();
+  });
+}
+function makeChart(id, labels, data, goal, color) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  const c = ctx.getContext('2d');
+  const grad = c.createLinearGradient(0,0,0,90);
+  grad.addColorStop(0, color + '28');
+  grad.addColorStop(1, color + '00');
+  return new Chart(c, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          borderColor: color,
+          backgroundColor: grad,
+          borderWidth: 2.5, tension: 0.42, fill: true,
+          pointBackgroundColor: data.map((_,i) => i === data.length-1 ? color : '#fff'),
+          pointBorderColor: color, pointBorderWidth: 2.5,
+          pointRadius: data.map((_,i) => i === data.length-1 ? 7 : 4),
+          pointHoverRadius: 7,
+        },
+        {
+          data: Array(labels.length).fill(goal),
+          borderColor: color+'44', borderDash:[5,4],
+          borderWidth:1.5, pointRadius:0, fill:false,
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#fff', borderColor:'#e2e8e2', borderWidth:1,
+          titleColor:color, bodyColor:'#1a2420', padding:9, cornerRadius:9,
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{color:'#7a8c80',font:{size:10,family:'DM Sans'}} },
+        y: { grid:{color:'rgba(0,0,0,0.04)'}, ticks:{color:'#7a8c80',font:{size:10,family:'DM Sans'}} }
+      }
+    }
+  });
+}
+// MODAL
+let mSlot=null, mAid=null, pURL=null;
+function openModal(aid, i) {
+  mAid=aid; mSlot=i; pURL=null;
+  const a = ANAMNESES[aid];
+  document.getElementById('m-title').textContent = `📸 ${PHOTO_LABELS[i]}`;
+  document.getElementById('m-sub').textContent   = `${a.mes} ${a.ano} · ${PHOTO_LABELS[i]}`;
+  document.getElementById('preview-box').style.display='none';
+  document.getElementById('file-inp').value='';
+  document.getElementById('ov').classList.add('on');
+}
+function closeModal() { document.getElementById('ov').classList.remove('on'); }
+function handleFile(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    pURL=ev.target.result;
+    document.getElementById('prev-img').src=pURL;
+    document.getElementById('preview-box').style.display='block';
+  };
+  r.readAsDataURL(f);
+}
+function confirmPhoto() {
+  if(!pURL){closeModal();return;}
+  const grid=document.getElementById('pg-'+mAid);
+  const slots=grid.querySelectorAll('.photo-slot');
+  const s=slots[mSlot];
+  s.querySelector('.slot-empty').style.display='none';
+  let img=s.querySelector('.slot-img');
+  if(!img){
+    img=document.createElement('img'); img.className='slot-img';
+    s.insertBefore(img,s.querySelector('.slot-footer'));
+  }
+  img.src=pURL;
+  document.getElementById('sf-'+mAid+'-'+mSlot).style.display='block';
+  closeModal();
+}
+document.getElementById('ov').addEventListener('click',e=>{ if(e.target===document.getElementById('ov')) closeModal(); });
+buildAll();
+initGlobalCharts();
+</script>
+</body>
+</html>
