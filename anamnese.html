@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Anamnese Nutricional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F2EE;
+  --card: #FFFFFF;
+  --primary: #1A3C34;
+  --accent: #3DAA74;
+  --accent2: #52C98A;
+  --text: #1A1A18;
+  --muted: #7A7A78;
+  --border: #E2DDD8;
+  --light: #F0EDE8;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; background: var(--bg); overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text); -webkit-tap-highlight-color: transparent; }
+#app { height: 100dvh; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; overflow: hidden; }
+.progress-bar { height: 3px; background: var(--light); width: 100%; position: relative; z-index: 110; flex-shrink: 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #3DAA74, #52C98A); transition: width .38s cubic-bezier(.4,0,.2,1); }
+.app-header { display: flex; align-items: center; padding: 10px 20px; flex-shrink: 0; min-height: 44px; z-index: 110; }
+.btn-back { background: none; border: none; font-size: 22px; color: var(--primary); cursor: pointer; padding: 4px 8px 4px 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+.btn-back.hidden { visibility: hidden; }
+.step-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: auto; }
+.screens-wrap { flex: 1; overflow: hidden; position: relative; }
+.screen { position: absolute; inset: 0; overflow-y: auto; padding: 0 20px 110px; transition: transform .38s cubic-bezier(.4,0,.2,1), opacity .38s ease; will-change: transform; }
+.screen.active { transform: translateX(0); opacity: 1; z-index: 2; }
+.screen.left { transform: translateX(-100%); opacity: 0; z-index: 1; }
+.screen.right { transform: translateX(100%); opacity: 0; z-index: 1; }
+.screen::-webkit-scrollbar { display: none; }
+.footer-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; padding: 12px 20px 28px; background: linear-gradient(to top, var(--bg) 75%, transparent); z-index: 100; }
+.btn-primary { width: 100%; height: 52px; border: none; border-radius: 16px; background: linear-gradient(135deg, #1A3C34, #2A5C4C); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary.accent { background: linear-gradient(135deg, #3DAA74, #52C98A); }
+.screen-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; color: var(--primary); line-height: 1.2; margin-bottom: 6px; }
+.screen-title em { color: var(--accent); font-style: italic; }
+.screen.active .screen-title { animation: fadeUp .35s ease both; }
+.screen.active .screen-sub { animation: fadeUp .35s .05s ease both; }
+.screen-sub { font-size: 14px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* Welcome screen */
+.welcome-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #3DAA74, #52C98A); display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(61,170,116,.25); }
+.steps-card { background: var(--card); border-radius: 20px; padding: 4px 0; margin-top: 14px; }
+.step-item { display: flex; align-items: center; gap: 12px; padding: 13px 18px; font-size: 14px; color: var(--text); }
+.step-item:not(:last-child) { border-bottom: 1px solid var(--border); }
+.step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+
+/* Inputs */
+.field-group { margin-bottom: 14px; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+.field-input { width: 100%; height: 48px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--card); padding: 0 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s; }
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,170,116,.12); }
+.field-select { width: 100%; height: 48px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--card); padding: 0 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--text); outline: none; -webkit-appearance: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%237A7A78' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; transition: border-color .15s, box-shadow .15s; }
+.field-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,170,116,.12); }
+textarea.field-input { height: auto; padding: 12px 14px; resize: none; }
+
+/* Drum picker */
+.drum-field { margin-bottom: 18px; }
+.drum-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; position: relative; display: flex; align-items: stretch; }
+.drum-card::before { content: ''; position: absolute; left: 0; right: 0; top: calc(50% - 30px); height: 1.5px; background: rgba(61,170,116,.6); z-index: 20; pointer-events: none; }
+.drum-card::after { content: ''; position: absolute; left: 0; right: 0; top: calc(50% + 30px); height: 1.5px; background: rgba(61,170,116,.6); z-index: 20; pointer-events: none; }
+.drum-band { position: absolute; left: 0; right: 0; top: calc(50% - 29px); height: 58px; background: rgba(61,170,116,.07); z-index: 5; pointer-events: none; }
+.drum-col { flex: 1; height: 240px; overflow: hidden; position: relative; cursor: grab; user-select: none; touch-action: pan-x; z-index: 10; }
+.drum-col::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 80px; background: linear-gradient(to bottom, var(--card) 15%, transparent 100%); pointer-events: none; z-index: 15; }
+.drum-col::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 80px; background: linear-gradient(to top, var(--card) 15%, transparent 100%); pointer-events: none; z-index: 15; }
+.drum-list { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+.drum-item { height: 60px; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: var(--border); opacity: .3; transform: scale(.75) perspective(200px) rotateX(20deg); transition: opacity .12s, transform .12s, color .12s, font-size .12s; }
+.drum-item.n1 { opacity: .6; color: var(--muted); transform: scale(.9) perspective(200px) rotateX(8deg); }
+.drum-item.n1-below { opacity: .6; color: var(--muted); transform: scale(.9) perspective(200px) rotateX(-8deg); }
+.drum-item.active { opacity: 1; color: var(--primary); font-size: 28px; transform: scale(1.05) perspective(200px) rotateX(0deg); }
+.drum-sep { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 300; color: var(--muted); padding: 0 2px; align-self: center; z-index: 21; pointer-events: none; flex-shrink: 0; }
+.drum-unit-lbl { font-size: 13px; font-weight: 600; color: var(--muted); padding: 0 14px 0 4px; align-self: center; z-index: 21; pointer-events: none; flex-shrink: 0; }
+.drum-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 6px; opacity: .6; }
+
+/* Chips */
+.section-head { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--accent); background: rgba(61,170,116,.1); padding: 4px 10px; border-radius: 8px; margin: 12px 0 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.chip { padding: 8px 14px; border-radius: 30px; border: 1.5px solid var(--border); background: var(--card); font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all .15s; user-select: none; display: flex; align-items: center; gap: 5px; }
+.chip.selected { border-color: var(--accent); background: rgba(61,170,116,.1); color: var(--primary); }
+.chip.selected::before { content: '\2713'; font-size: 11px; color: var(--accent); }
+
+/* Radio */
+.radio-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.radio-opt { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; transition: all .15s; user-select: none; }
+.radio-opt.selected { border-color: var(--accent); background: rgba(61,170,116,.07); }
+.radio-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.radio-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: 0; transition: opacity .15s; }
+.radio-opt.selected .radio-dot { border-color: var(--accent); background: var(--accent); }
+.radio-opt.selected .radio-dot::after { opacity: 1; }
+.radio-opt-text { font-size: 14px; color: var(--text); }
+
+/* Scale */
+.scale-row { display: flex; gap: 5px; margin-bottom: 14px; }
+.scale-btn { flex: 1; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--card); font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.scale-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Conditional fields */
+.cond { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, margin .25s ease; margin-top: 0; margin-bottom: 0; }
+.cond.visible { max-height: 600px; opacity: 1; margin-bottom: 14px; }
+
+/* Optin */
+.optin-box { background: rgba(61,170,116,.07); border: 1.5px solid rgba(61,170,116,.3); border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.optin-box input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.optin-box label { font-size: 13px; color: var(--text); line-height: 1.5; cursor: pointer; }
+
+/* Done screen */
+.done-icon { width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, #3DAA74, #52C98A); display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 20px auto 18px; box-shadow: 0 12px 32px rgba(61,170,116,.3); }
+.summary-card { background: var(--card); border-radius: 16px; margin-top: 16px; overflow: hidden; }
+.summary-row { display: flex; justify-content: space-between; padding: 12px 16px; font-size: 14px; }
+.summary-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+.summary-label { color: var(--muted); }
+.summary-val { color: var(--primary); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:11%"></div></div>
+  <div class="app-header">
+    <button class="btn-back hidden" id="btnBack" onclick="prevScreen()">&#8592;</button>
+    <span class="step-label" id="stepLabel">Inicio</span>
+  </div>
+  <div class="screens-wrap">
+
+    <!-- SC0: Boas-vindas -->
+    <div class="screen active" id="sc0">
+      <div class="welcome-icon">&#129367;</div>
+      <div class="screen-title">Sua <em>Anamnese</em> Nutricional</div>
+      <div class="screen-sub">Responda as perguntas com calma. Seus dados serao usados exclusivamente para o seu acompanhamento nutricional.</div>
+      <div class="steps-card">
+        <div class="step-item"><div class="step-num">1</div>Dados pessoais</div>
+        <div class="step-item"><div class="step-num">2</div>Medidas corporais</div>
+        <div class="step-item"><div class="step-num">3</div>Preferencias alimentares</div>
+        <div class="step-item"><div class="step-num">4</div>Atividade fisica</div>
+        <div class="step-item"><div class="step-num">5</div>Saude e habitos</div>
+        <div class="step-item"><div class="step-num">6</div>Finalizacao e envio</div>
+      </div>
+    </div>
+
+    <!-- SC1: Dados pessoais -->
+    <div class="screen right" id="sc1">
+      <div class="screen-title">Dados <em>pessoais</em></div>
+      <div class="screen-sub">Informacoes basicas para o seu perfil.</div>
+      <div class="field-group"><div class="field-label">Nome completo *</div><input class="field-input" id="f_nome" type="text" autocomplete="name" placeholder="Seu nome completo"></div>
+      <div class="field-group"><div class="field-label">E-mail *</div><input class="field-input" id="f_email" type="email" autocomplete="email" placeholder="seu@email.com"></div>
+      <div class="field-group"><div class="field-label">WhatsApp com DDD</div><input class="field-input" id="f_whats" type="tel" autocomplete="tel" placeholder="(11) 99999-0000"></div>
+      <div class="field-group"><div class="field-label">Data de nascimento</div><input class="field-input" id="f_nasc" type="date"></div>
+      <div class="field-group"><div class="field-label">Genero</div><select class="field-select" id="f_genero"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option><option>Nao-binario</option><option>Prefiro nao dizer</option></select></div>
+      <div class="field-group"><div class="field-label">Estado civil</div><select class="field-select" id="f_civil"><option value="">Selecione</option><option>Solteiro(a)</option><option>Casado(a)</option><option>Uniao estavel</option><option>Divorciado(a)</option><option>Viuvo(a)</option></select></div>
+      <div class="field-group"><div class="field-label">Profissao</div><input class="field-input" id="f_prof" type="text" placeholder="Sua profissao"></div>
+    </div>
+
+    <!-- SC2: Medidas -->
+    <div class="screen right" id="sc2">
+      <div class="screen-title">Suas <em>medidas</em></div>
+      <div class="screen-sub">Ajuste os valores deslizando para cima ou para baixo.</div>
+      <div class="drum-field">
+        <div class="field-label">Altura</div>
+        <div class="drum-card" id="cardAlt"><div class="drum-band"></div><div class="drum-col" id="colAlt"></div><div class="drum-unit-lbl">cm</div></div>
+        <div class="drum-hint">&#9650; role para ajustar &#9660;</div>
+      </div>
+      <div class="drum-field">
+        <div class="field-label">Peso atual</div>
+        <div class="drum-card" id="cardPeso"><div class="drum-band"></div><div class="drum-col" id="colPesoInt"></div><div class="drum-sep">,</div><div class="drum-col" id="colPesoDec" style="max-width:72px"></div><div class="drum-unit-lbl">kg</div></div>
+        <div class="drum-hint">&#9650; role para ajustar &#9660;</div>
+      </div>
+      <div class="drum-field">
+        <div class="field-label">Peso desejado</div>
+        <div class="drum-card" id="cardDeseja"><div class="drum-band"></div><div class="drum-col" id="colDesejaInt"></div><div class="drum-sep">,</div><div class="drum-col" id="colDesejaDec" style="max-width:72px"></div><div class="drum-unit-lbl">kg</div></div>
+        <div class="drum-hint">&#9650; role para ajustar &#9660;</div>
+      </div>
+    </div>
+
+    <!-- SC3: Preferencias alimentares -->
+    <div class="screen right" id="sc3">
+      <div class="screen-title">Preferencias <em>alimentares</em></div>
+      <div class="screen-sub">Selecione os alimentos que voce gosta ou costuma consumir.</div>
+
+      <div class="section-head">&#129385; Proteinas</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Frango</div><div class="chip" onclick="toggleChip(this)">Carne bovina</div><div class="chip" onclick="toggleChip(this)">Peixe</div><div class="chip" onclick="toggleChip(this)">Frutos do mar</div><div class="chip" onclick="toggleChip(this)">Ovo</div><div class="chip" onclick="toggleChip(this)">Atum/Sardinha</div><div class="chip" onclick="toggleChip(this)">Queijo</div><div class="chip" onclick="toggleChip(this)">Tofu</div></div>
+
+      <div class="section-head">&#127806; Carboidratos</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Arroz</div><div class="chip" onclick="toggleChip(this)">Batata</div><div class="chip" onclick="toggleChip(this)">Batata-doce</div><div class="chip" onclick="toggleChip(this)">Macarrao</div><div class="chip" onclick="toggleChip(this)">Aveia</div><div class="chip" onclick="toggleChip(this)">Mandioca</div><div class="chip" onclick="toggleChip(this)">Pao integral</div><div class="chip" onclick="toggleChip(this)">Inhame</div></div>
+
+      <div class="section-head">&#129382; Vegetais</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Alface/Rucula</div><div class="chip" onclick="toggleChip(this)">Brocolis</div><div class="chip" onclick="toggleChip(this)">Cenoura</div><div class="chip" onclick="toggleChip(this)">Tomate</div><div class="chip" onclick="toggleChip(this)">Abobrinha</div><div class="chip" onclick="toggleChip(this)">Espinafre</div><div class="chip" onclick="toggleChip(this)">Beterraba</div><div class="chip" onclick="toggleChip(this)">Pepino</div></div>
+
+      <div class="section-head">&#129752; Leguminosas</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Feijao</div><div class="chip" onclick="toggleChip(this)">Lentilha</div><div class="chip" onclick="toggleChip(this)">Grao-de-bico</div><div class="chip" onclick="toggleChip(this)">Ervilha</div><div class="chip" onclick="toggleChip(this)">Soja</div></div>
+
+      <div class="section-head">&#129361; Gorduras boas</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Abacate</div><div class="chip" onclick="toggleChip(this)">Azeite</div><div class="chip" onclick="toggleChip(this)">Castanhas</div><div class="chip" onclick="toggleChip(this)">Amendoim</div><div class="chip" onclick="toggleChip(this)">Coco</div><div class="chip" onclick="toggleChip(this)">Chia/Linhaca</div></div>
+
+      <div class="section-head">&#127827; Frutas</div>
+      <div class="chips"><div class="chip" onclick="toggleChip(this)">Banana</div><div class="chip" onclick="toggleChip(this)">Maca</div><div class="chip" onclick="toggleChip(this)">Laranja</div><div class="chip" onclick="toggleChip(this)">Mamao</div><div class="chip" onclick="toggleChip(this)">Manga</div><div class="chip" onclick="toggleChip(this)">Morango</div><div class="chip" onclick="toggleChip(this)">Melancia</div><div class="chip" onclick="toggleChip(this)">Uva</div><div class="chip" onclick="toggleChip(this)">Abacaxi</div><div class="chip" onclick="toggleChip(this)">Pera</div></div>
+    </div>
+
+    <!-- SC4: Atividade fisica -->
+    <div class="screen right" id="sc4">
+      <div class="screen-title">Atividade <em>fisica</em></div>
+      <div class="screen-sub">Conte-nos sobre sua rotina de exercicios.</div>
+
+      <div class="field-label">Pratica atividades fisicas?</div>
+      <div class="radio-group" data-group="atividade">
+        <div class="radio-opt" onclick="selectRadio(this,'atividade')"><div class="radio-dot"></div><div class="radio-opt-text">Sim, regularmente</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'atividade')"><div class="radio-dot"></div><div class="radio-opt-text">Sim, as vezes</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'atividade')"><div class="radio-dot"></div><div class="radio-opt-text">Nao, mas pretendo</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'atividade')"><div class="radio-dot"></div><div class="radio-opt-text">Nao pratico</div></div>
+      </div>
+
+      <div class="cond" id="cond_atividade">
+        <div class="field-label">Modalidades</div>
+        <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Musculacao</div><div class="chip" onclick="toggleChip(this)">Corrida</div><div class="chip" onclick="toggleChip(this)">Caminhada</div><div class="chip" onclick="toggleChip(this)">Natacao</div><div class="chip" onclick="toggleChip(this)">Ciclismo</div><div class="chip" onclick="toggleChip(this)">Pilates</div><div class="chip" onclick="toggleChip(this)">Yoga</div><div class="chip" onclick="toggleChip(this)">Funcional</div><div class="chip" onclick="toggleChip(this)">Danca</div><div class="chip" onclick="toggleChip(this)">Esporte coletivo</div></div>
+
+        <div class="field-group"><div class="field-label">Frequencia semanal</div><select class="field-select" id="f_freq"><option value="">Selecione</option><option>1x</option><option>2-3x</option><option>4-5x</option><option>Todos os dias</option></select></div>
+
+        <div class="field-label">Periodo de treino</div>
+        <div class="radio-group" data-group="periodo">
+          <div class="radio-opt" onclick="selectRadio(this,'periodo')"><div class="radio-dot"></div><div class="radio-opt-text">Manha</div></div>
+          <div class="radio-opt" onclick="selectRadio(this,'periodo')"><div class="radio-dot"></div><div class="radio-opt-text">Tarde</div></div>
+          <div class="radio-opt" onclick="selectRadio(this,'periodo')"><div class="radio-dot"></div><div class="radio-opt-text">Noite</div></div>
+          <div class="radio-opt" onclick="selectRadio(this,'periodo')"><div class="radio-dot"></div><div class="radio-opt-text">Varia</div></div>
+        </div>
+
+        <div class="field-group"><div class="field-label">Restricoes ou dores</div><textarea class="field-input" rows="3" placeholder="Descreva se houver..."></textarea></div>
+      </div>
+    </div>
+
+    <!-- SC5: Saude e medicamentos -->
+    <div class="screen right" id="sc5">
+      <div class="screen-title">Saude e <em>medicamentos</em></div>
+      <div class="screen-sub">Informacoes importantes para o seu plano.</div>
+
+      <div class="field-label">Toma medicamentos continuos?</div>
+      <div class="radio-group" data-group="medicamento">
+        <div class="radio-opt" onclick="selectRadio(this,'medicamento')"><div class="radio-dot"></div><div class="radio-opt-text">Nao</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'medicamento')"><div class="radio-dot"></div><div class="radio-opt-text">Sim</div></div>
+      </div>
+      <div class="cond" id="cond_medicamento">
+        <div class="field-group"><div class="field-label">Quais medicamentos e horarios?</div><textarea class="field-input" rows="2" placeholder="Ex: Losartana 50mg pela manha..."></textarea></div>
+      </div>
+
+      <div class="field-label">Suplementos que utiliza</div>
+      <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Whey</div><div class="chip" onclick="toggleChip(this)">Creatina</div><div class="chip" onclick="toggleChip(this)">Vitamina D</div><div class="chip" onclick="toggleChip(this)">Omega 3</div><div class="chip" onclick="toggleChip(this)">Colageno</div><div class="chip" onclick="toggleChip(this)">Magnesio</div><div class="chip" onclick="toggleChip(this)">B12</div><div class="chip" onclick="toggleChip(this)">Ferro</div><div class="chip" onclick="toggleChip(this)">Nenhum</div></div>
+
+      <div class="field-label">Condicoes diagnosticadas</div>
+      <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Diabetes T1</div><div class="chip" onclick="toggleChip(this)">Diabetes T2</div><div class="chip" onclick="toggleChip(this)">Hipertensao</div><div class="chip" onclick="toggleChip(this)">Hipotireoidismo</div><div class="chip" onclick="toggleChip(this)">SOP</div><div class="chip" onclick="toggleChip(this)">Dislipidemia</div><div class="chip" onclick="toggleChip(this)">Cardiopatia</div><div class="chip" onclick="toggleChip(this)">Esteatose</div><div class="chip" onclick="toggleChip(this)">Nenhuma</div></div>
+
+      <div class="field-group"><div class="field-label">Cirurgias anteriores</div><input class="field-input" type="text" placeholder="Opcional"></div>
+    </div>
+
+    <!-- SC6: Saude digestiva -->
+    <div class="screen right" id="sc6">
+      <div class="screen-title">Saude <em>digestiva</em></div>
+      <div class="screen-sub">Entender seu sistema digestivo ajuda a montar o melhor plano.</div>
+
+      <div class="field-label">Mastigacao e ritmo das refeicoes</div>
+      <div class="radio-group" data-group="mastigacao">
+        <div class="radio-opt" onclick="selectRadio(this,'mastigacao')"><div class="radio-dot"></div><div class="radio-opt-text">Como rapido, quase nao mastigo</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'mastigacao')"><div class="radio-dot"></div><div class="radio-opt-text">Ritmo normal, mastigo razoavelmente</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'mastigacao')"><div class="radio-dot"></div><div class="radio-opt-text">Como devagar, mastigo bem</div></div>
+      </div>
+
+      <div class="field-label">Alergias ou sensibilidades</div>
+      <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Lactose</div><div class="chip" onclick="toggleChip(this)">Gluten</div><div class="chip" onclick="toggleChip(this)">Amendoim</div><div class="chip" onclick="toggleChip(this)">Frutos do mar</div><div class="chip" onclick="toggleChip(this)">Ovo</div><div class="chip" onclick="toggleChip(this)">Nenhuma</div></div>
+
+      <div class="field-label">Desconfortos intestinais</div>
+      <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Gases</div><div class="chip" onclick="toggleChip(this)">Inchaco</div><div class="chip" onclick="toggleChip(this)">Constipacao</div><div class="chip" onclick="toggleChip(this)">Diarreia</div><div class="chip" onclick="toggleChip(this)">Refluxo</div><div class="chip" onclick="toggleChip(this)">Nausea</div><div class="chip" onclick="toggleChip(this)">Nenhum</div></div>
+
+      <div class="field-label">Avaliacao do intestino (0 = pessimo, 10 = otimo)</div>
+      <div class="scale-row"><div class="scale-btn" onclick="selectScale(this)">0</div><div class="scale-btn" onclick="selectScale(this)">1</div><div class="scale-btn" onclick="selectScale(this)">2</div><div class="scale-btn" onclick="selectScale(this)">3</div><div class="scale-btn" onclick="selectScale(this)">4</div><div class="scale-btn" onclick="selectScale(this)">5</div><div class="scale-btn" onclick="selectScale(this)">6</div><div class="scale-btn" onclick="selectScale(this)">7</div><div class="scale-btn" onclick="selectScale(this)">8</div><div class="scale-btn" onclick="selectScale(this)">9</div><div class="scale-btn" onclick="selectScale(this)">10</div></div>
+
+      <div class="field-label">Tipo de evacuacao (Escala de Bristol)</div>
+      <div class="radio-group" data-group="bristol">
+        <div class="radio-opt" onclick="selectRadio(this,'bristol')"><div class="radio-dot"></div><div class="radio-opt-text">Ressecado (bolinhas duras)</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'bristol')"><div class="radio-dot"></div><div class="radio-opt-text">Normal (formato de salsicha lisa)</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'bristol')"><div class="radio-dot"></div><div class="radio-opt-text">Amolecido (pastoso)</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'bristol')"><div class="radio-dot"></div><div class="radio-opt-text">Liquido (diarreia)</div></div>
+      </div>
+    </div>
+
+    <!-- SC7: Sono, agua e jejum -->
+    <div class="screen right" id="sc7">
+      <div class="screen-title">Sono, <em>agua</em> e jejum</div>
+      <div class="screen-sub">Habitos que influenciam diretamente a sua saude.</div>
+
+      <div class="field-label">Avaliacao do sono (0 = pessimo, 10 = otimo)</div>
+      <div class="scale-row"><div class="scale-btn" onclick="selectScale(this)">0</div><div class="scale-btn" onclick="selectScale(this)">1</div><div class="scale-btn" onclick="selectScale(this)">2</div><div class="scale-btn" onclick="selectScale(this)">3</div><div class="scale-btn" onclick="selectScale(this)">4</div><div class="scale-btn" onclick="selectScale(this)">5</div><div class="scale-btn" onclick="selectScale(this)">6</div><div class="scale-btn" onclick="selectScale(this)">7</div><div class="scale-btn" onclick="selectScale(this)">8</div><div class="scale-btn" onclick="selectScale(this)">9</div><div class="scale-btn" onclick="selectScale(this)">10</div></div>
+
+      <div class="field-group"><div class="field-label">Consumo diario de agua</div><select class="field-select" id="f_agua"><option value="">Selecione</option><option>&lt; 500mL</option><option>500 - 1.000mL</option><option>1.000 - 1.500mL</option><option>1.500 - 2.000mL</option><option>2.000 - 2.500mL</option><option>&gt; 2.500mL</option></select></div>
+
+      <div class="field-label">Cor da urina habitual</div>
+      <div class="radio-group" data-group="urina">
+        <div class="radio-opt" onclick="selectRadio(this,'urina')"><div class="radio-dot"></div><div class="radio-opt-text">&#128309; Transparente</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'urina')"><div class="radio-dot"></div><div class="radio-opt-text">&#128993; Amarelo-claro (ideal)</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'urina')"><div class="radio-dot"></div><div class="radio-opt-text">&#128992; Amarelo escuro</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'urina')"><div class="radio-dot"></div><div class="radio-opt-text">&#128999; Laranjada</div></div>
+      </div>
+
+      <div class="field-label">Pratica jejum intermitente?</div>
+      <div class="radio-group" data-group="jejum">
+        <div class="radio-opt" onclick="selectRadio(this,'jejum')"><div class="radio-dot"></div><div class="radio-opt-text">Nao</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'jejum')"><div class="radio-dot"></div><div class="radio-opt-text">Sim, diariamente</div></div>
+        <div class="radio-opt" onclick="selectRadio(this,'jejum')"><div class="radio-dot"></div><div class="radio-opt-text">Sim, as vezes</div></div>
+      </div>
+
+      <div class="cond" id="cond_jejum">
+        <div class="field-group"><div class="field-label">Duracao media do jejum</div><select class="field-select" id="f_jejum_dur"><option value="">Selecione</option><option>12h</option><option>14h</option><option>16h</option><option>18h</option><option>20h+</option></select></div>
+      </div>
+    </div>
+
+    <!-- SC8: Finalizacao -->
+    <div class="screen right" id="sc8">
+      <div class="screen-title"><em>Finalizacao</em></div>
+      <div class="screen-sub">Ultimas informacoes antes de enviar.</div>
+
+      <div class="field-label">Historico familiar de doencas</div>
+      <div class="chips" style="margin-bottom:14px"><div class="chip" onclick="toggleChip(this)">Diabetes</div><div class="chip" onclick="toggleChip(this)">Hipertensao</div><div class="chip" onclick="toggleChip(this)">Dislipidemia</div><div class="chip" onclick="toggleChip(this)">Cardiopatia</div><div class="chip" onclick="toggleChip(this)">Cancer</div><div class="chip" onclick="toggleChip(this)">Obesidade</div><div class="chip" onclick="toggleChip(this)">Nenhum</div></div>
+
+      <div class="field-group"><div class="field-label">Informacoes adicionais</div><textarea class="field-input" rows="4" placeholder="Algo mais que gostaria de compartilhar?"></textarea></div>
+
+      <div class="optin-box" id="optinBox">
+        <input type="checkbox" id="ck_lgpd">
+        <label for="ck_lgpd">Autorizo o uso dos meus dados pessoais e de saude para fins de acompanhamento nutricional, conforme a LGPD (Lei 13.709/2018). As informacoes serao tratadas com confidencialidade.</label>
+      </div>
+    </div>
+
+    <!-- SC9: Confirmacao -->
+    <div class="screen right" id="sc9">
+      <div class="done-icon">&#9989;</div>
+      <div class="screen-title" style="text-align:center">Anamnese <em>enviada!</em></div>
+      <div class="screen-sub" style="text-align:center">Obrigado por preencher. Suas informacoes foram registradas com sucesso.</div>
+      <div class="summary-card">
+        <div class="summary-row"><span class="summary-label">Nome</span><span class="summary-val" id="sum_nome">-</span></div>
+        <div class="summary-row"><span class="summary-label">Altura</span><span class="summary-val" id="sum_alt">-</span></div>
+        <div class="summary-row"><span class="summary-label">Peso atual</span><span class="summary-val" id="sum_peso">-</span></div>
+        <div class="summary-row"><span class="summary-label">Peso desejado</span><span class="summary-val" id="sum_deseja">-</span></div>
+        <div class="summary-row"><span class="summary-label">Atividade</span><span class="summary-val" id="sum_obj">-</span></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="footer-nav">
+    <button class="btn-primary" id="btnNext" onclick="nextScreen()">Comecar &#8594;</button>
+  </div>
+</div>
+
+<script>
+var cur = 0;
+var radios = {};
+var drums = {};
+
+var BTNS = [
+  'Comecar \u2192','Proximo \u2192','Proximo \u2192','Proximo \u2192',
+  'Proximo \u2192','Proximo \u2192','Proximo \u2192','Proximo \u2192',
+  'Enviar anamnese \u2713',''
+];
+var LBLS = [
+  'Inicio','Etapa 1 \u2014 Dados pessoais','Etapa 2 \u2014 Medidas',
+  'Etapa 3 \u2014 Alimentacao','Etapa 4 \u2014 Atividade fisica','Etapa 5 \u2014 Saude',
+  'Etapa 6 \u2014 Digestivo','Etapa 7 \u2014 Sono e agua','Etapa 8 \u2014 Finalizacao','Concluido'
+];
+
+function goTo(n) {
+  var from = document.getElementById('sc' + cur);
+  var to = document.getElementById('sc' + n);
+  var fwd = n > cur;
+  from.className = 'screen ' + (fwd ? 'left' : 'right');
+  to.className = 'screen ' + (fwd ? 'right' : 'left');
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { to.className = 'screen active'; });
+  });
+  cur = n;
+  document.getElementById('progressFill').style.width = ((n / 9) * 100) + '%';
+  document.getElementById('stepLabel').textContent = LBLS[n] || '';
+  var bb = document.getElementById('btnBack');
+  bb.className = (n > 0 && n < 9) ? 'btn-back' : 'btn-back hidden';
+  var bn = document.getElementById('btnNext');
+  if (n === 9) { bn.style.display = 'none'; }
+  else {
+    bn.style.display = 'flex';
+    bn.textContent = BTNS[n];
+    bn.className = n === 8 ? 'btn-primary accent' : 'btn-primary';
+  }
+}
+
+function nextScreen() {
+  if (cur === 1) {
+    var nome = document.getElementById('f_nome').value.trim();
+    var email = document.getElementById('f_email').value.trim();
+    if (!nome || !email) {
+      if (!nome) document.getElementById('f_nome').style.borderColor = '#e74c3c';
+      if (!email) document.getElementById('f_email').style.borderColor = '#e74c3c';
+      return;
+    }
+  }
+  if (cur === 8) {
+    if (!document.getElementById('ck_lgpd').checked) {
+      var b = document.getElementById('optinBox');
+      b.style.animation = 'none';
+      setTimeout(function() { b.style.animation = 'shake .3s ease'; }, 10);
+      return;
+    }
+    fillSummary();
+  }
+  if (cur < 9) goTo(cur + 1);
+}
+
+function prevScreen() { if (cur > 0) goTo(cur - 1); }
+
+function selectRadio(el, g) {
+  var group = el.closest('.radio-group');
+  group.querySelectorAll('.radio-opt').forEach(function(o) { o.classList.remove('selected'); });
+  el.classList.add('selected');
+  var val = el.querySelector('.radio-opt-text').textContent;
+  radios[g] = val;
+
+  // Campos condicionais
+  if (g === 'atividade') {
+    var show = val.indexOf('Sim') === 0;
+    document.getElementById('cond_atividade').classList.toggle('visible', show);
+  }
+  if (g === 'medicamento') {
+    var show = val === 'Sim';
+    document.getElementById('cond_medicamento').classList.toggle('visible', show);
+  }
+  if (g === 'jejum') {
+    var show = val.indexOf('Sim') === 0;
+    document.getElementById('cond_jejum').classList.toggle('visible', show);
+  }
+}
+
+function toggleChip(el) { el.classList.toggle('selected'); }
+
+function selectScale(el) {
+  el.closest('.scale-row').querySelectorAll('.scale-btn').forEach(function(b) { b.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function fillSummary() {
+  document.getElementById('sum_nome').textContent = document.getElementById('f_nome').value || '\u2014';
+  document.getElementById('sum_alt').textContent = (drums.alt ? drums.alt.val() : '165') + ' cm';
+  document.getElementById('sum_peso').textContent = (drums.pesoI ? drums.pesoI.val() : '70') + ',' + (drums.pesoD ? drums.pesoD.val() : '0') + ' kg';
+  document.getElementById('sum_deseja').textContent = (drums.desI ? drums.desI.val() : '65') + ',' + (drums.desD ? drums.desD.val() : '0') + ' kg';
+  document.getElementById('sum_obj').textContent = radios['atividade'] || '\u2014';
+}
+
+// Reset border on input focus
+document.querySelectorAll('.field-input').forEach(function(el) {
+  el.addEventListener('focus', function() { el.style.borderColor = ''; });
+});
+
+// Drum picker
+function rng(a, b, step) {
+  step = step || 1;
+  var r = [];
+  for (var v = a; v <= b; v = Math.round((v + step) * 10) / 10) {
+    r.push(String(v));
+  }
+  return r;
+}
+
+function Drum(col, values, init) {
+  this.col = col;
+  this.values = values;
+  this.H = 60;
+  this.PAD = 3;
+  this._i = values.indexOf(String(init));
+  if (this._i < 0) this._i = 0;
+  this._vel = 0;
+  this._raf = null;
+  this._els = [];
+  this._build();
+  this._bind();
+  this._snap(this._i, false);
+}
+
+Drum.prototype._build = function() {
+  this.list = document.createElement('div');
+  this.list.className = 'drum-list';
+  var p, d, el;
+  for (p = 0; p < this.PAD; p++) {
+    d = document.createElement('div');
+    d.className = 'drum-item';
+    d.innerHTML = '&nbsp;';
+    this.list.appendChild(d);
+  }
+  for (var i = 0; i < this.values.length; i++) {
+    el = document.createElement('div');
+    el.className = 'drum-item';
+    el.textContent = this.values[i];
+    this.list.appendChild(el);
+    this._els.push(el);
+  }
+  for (p = 0; p < this.PAD; p++) {
+    d = document.createElement('div');
+    d.className = 'drum-item';
+    d.innerHTML = '&nbsp;';
+    this.list.appendChild(d);
+  }
+  this.col.appendChild(this.list);
+};
+
+Drum.prototype._offFor = function(i) {
+  var colH = this.col.offsetHeight || 240;
+  var centerY = colH / 2;
+  var itemCenter = (this.PAD + i) * this.H + this.H / 2;
+  return centerY - itemCenter;
+};
+
+Drum.prototype._iFrom = function(off) {
+  var colH = this.col.offsetHeight || 240;
+  var centerY = colH / 2;
+  var itemCenter = centerY - off;
+  var i = Math.round((itemCenter - this.H / 2) / this.H) - this.PAD;
+  return Math.max(0, Math.min(this.values.length - 1, i));
+};
+
+Drum.prototype._getOff = function() {
+  var m = (this.list.style.transform || '').match(/translateY\(([^)]+)px\)/);
+  return m ? parseFloat(m[1]) : 0;
+};
+
+Drum.prototype._highlight = function(off) {
+  var i = this._iFrom(off);
+  this._i = i;
+  for (var j = 0; j < this._els.length; j++) {
+    var el = this._els[j];
+    el.classList.remove('active', 'n1', 'n1-below');
+    var d = j - i;
+    if (d === 0) el.classList.add('active');
+    else if (d === -1) el.classList.add('n1');
+    else if (d === 1) el.classList.add('n1-below');
+  }
+};
+
+Drum.prototype._snap = function(i, animate) {
+  this._i = Math.max(0, Math.min(this.values.length - 1, i));
+  var off = this._offFor(this._i);
+  this.list.style.transition = animate ? 'transform .26s cubic-bezier(.4,0,.2,1)' : 'none';
+  this.list.style.transform = 'translateY(' + off + 'px)';
+  this._highlight(off);
+};
+
+Drum.prototype.val = function() { return this.values[this._i]; };
+
+Drum.prototype._bind = function() {
+  var self = this;
+  var startY = 0, startOff = 0, dragging = false, lastY = 0, lastT = 0;
+
+  function start(y) {
+    if (self._raf) { cancelAnimationFrame(self._raf); self._raf = null; }
+    dragging = true;
+    startY = y; startOff = self._getOff();
+    self._vel = 0; lastY = y; lastT = Date.now();
+    self.list.style.transition = 'none';
+  }
+  function move(y) {
+    if (!dragging) return;
+    var now = Date.now(), dt = now - lastT;
+    if (dt > 0) self._vel = (y - lastY) / dt * 16;
+    lastY = y; lastT = now;
+    var off = startOff + (y - startY);
+    self.list.style.transform = 'translateY(' + off + 'px)';
+    self._highlight(off);
+  }
+  function end() {
+    if (!dragging) return;
+    dragging = false;
+    var off = self._getOff();
+    function tick() {
+      self._vel *= 0.86;
+      off += self._vel;
+      self.list.style.transform = 'translateY(' + off + 'px)';
+      self._highlight(off);
+      if (Math.abs(self._vel) > 0.4) {
+        self._raf = requestAnimationFrame(tick);
+      } else {
+        self._snap(self._iFrom(off), true);
+      }
+    }
+    if (Math.abs(self._vel) > 0.8) {
+      self._raf = requestAnimationFrame(tick);
+    } else {
+      self._snap(self._iFrom(off), true);
+    }
+  }
+
+  self.col.addEventListener('touchstart', function(e) { start(e.touches[0].clientY); }, { passive: true });
+  self.col.addEventListener('touchmove', function(e) { e.preventDefault(); move(e.touches[0].clientY); }, { passive: false });
+  self.col.addEventListener('touchend', end);
+  self.col.addEventListener('mousedown', function(e) { start(e.clientY); });
+  window.addEventListener('mousemove', function(e) { if (dragging) move(e.clientY); });
+  window.addEventListener('mouseup', function() { if (dragging) end(); });
+};
+
+window.addEventListener('load', function() {
+  drums.alt = new Drum(document.getElementById('colAlt'), rng(140, 215), '165');
+  drums.pesoI = new Drum(document.getElementById('colPesoInt'), rng(30, 199), '70');
+  drums.pesoD = new Drum(document.getElementById('colPesoDec'), ['0','1','2','3','4','5','6','7','8','9'], '0');
+  drums.desI = new Drum(document.getElementById('colDesejaInt'), rng(30, 199), '65');
+  drums.desD = new Drum(document.getElementById('colDesejaDec'), ['0','1','2','3','4','5','6','7','8','9'], '0');
+});
+</script>
+</body>
+</html>
